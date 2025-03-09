@@ -1,77 +1,67 @@
 import google.generativeai as genai
 import streamlit as st
-from fpdf import FPDF
 
+# ✅ Configure the GenAI client
 genai.configure(api_key="AIzaSyCNgFEyq3K1pLud_3M5EUNYtIut2YKSNBw")
 
-def generate_resume(name, job_title):
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    
+# ✅ Function to generate a resume using Gemini API
+def generate_resume(name, job_title, email, phone, linkedin, university, grad_year):
+    # ✅ Create the generative model instance
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-pro"
+    )
+
+    # ✅ Create the context dynamically
     context = f"""
-    fname: {name}
-    job_title: {job_title}
-    Write a professional ATS-friendly resume based on the above data.
+    Name: {name}
+    Job Title: {job_title}
+    Email: {email}
+    Phone Number: {phone}
+    LinkedIn: {linkedin}
+    University: {university}
+    Graduation Year: {grad_year}
+    
+    Create a professional ATS-friendly resume based on the above information.
     """
 
-    chat_session = model.start_chat(history=[])
+    # ✅ Generate content from the model
+    response = model.generate_content(contents=[context])
 
-    response = chat_session.send_message(context)
+    # ✅ Extract the content properly
+    text = response.candidates[0].content
     
-    text = response.text
-    return text
+    # ✅ Clean the content (Remove any placeholders if left)
+    cleaned_text = clean_resume_text(text)
+    
+    return cleaned_text
 
+# ✅ Function to clean the text (Remove extra placeholders)
 def clean_resume_text(text):
-    text = text.replace("[Add Email Address]", "[Your Email Address]")
-    text = text.replace("[Add Phone Number]", "[Your Phone Number]")
-    text = text.replace("[Add LinkedIn Profile URL (optional)]", "[Your LinkedIn URL (optional)]")
-    text = text.replace("[University Name]", "[Your University Name]")
-    text = text.replace("[Graduation Year]", "[Your Graduation Year]")
+    text = text.replace("[Add Email Address]", "")
+    text = text.replace("[Add Phone Number]", "")
+    text = text.replace("[Add LinkedIn Profile URL (optional)]", "")
+    text = text.replace("[University Name]", "")
+    text = text.replace("[Graduation Year]", "")
     return text
 
-# ✅ Function to generate PDF from text
-def generate_pdf(name, job_title, content):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
-    # Add content to PDF
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(200, 10, txt=f"Resume for {name}", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(200, 10, txt=content)
-
-    # Save the PDF
-    file_path = f"{name.replace(' ', '_')}_Resume.pdf"
-    pdf.output(file_path)
-    return file_path
-
-# ✅ Streamlit UI
-st.title("🚀 AI Resume Generator (Powered by Gemini 2.0)")
+# ✅ Streamlit App UI
+st.title("Smart Resume Generator")
 
 # Input fields
-name = st.text_input("Enter your Name")
+name = st.text_input("Enter your Full Name")
 job_title = st.text_input("Enter your Job Title")
+email = st.text_input("Enter your Email Address")
+phone = st.text_input("Enter your Phone Number")
+linkedin = st.text_input("Enter your LinkedIn Profile URL (Optional)")
+university = st.text_input("Enter your University Name")
+grad_year = st.text_input("Enter your Graduation Year")
 
-# Submit button
+# Generate button
 if st.button("Generate Resume"):
-    if name and job_title:
-        # Generate the resume using Gemini API
-        resume = generate_resume(name, job_title)
-        cleaned_resume = clean_resume_text(resume)
-        
-        # Display the generated resume
-        st.markdown("## 🎓 Generated Resume")
-        st.markdown(cleaned_resume)
-        
-        # ✅ Generate PDF button
-        pdf_path = generate_pdf(name, job_title, cleaned_resume)
-        with open(pdf_path, "rb") as pdf_file:
-            st.download_button(
-                label="📄 Download Resume as PDF",
-                data=pdf_file,
-                file_name=f"{name.replace(' ', '_')}_Resume.pdf",
-                mime="application/pdf"
-            )
+    if name and job_title and email and phone and university and grad_year:
+        # ✅ Generate the resume
+        resume = generate_resume(name, job_title, email, phone, linkedin, university, grad_year)
+        st.markdown("## 📝 Generated Resume")
+        st.markdown(resume)
     else:
-        st.warning("⚠️ Please enter both your Name and Job Title.")
+        st.warning("⚠️ Please fill all the required fields.")
