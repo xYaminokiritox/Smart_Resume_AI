@@ -2,7 +2,7 @@ import google.generativeai as genai
 import streamlit as st
 
 # ✅ Configure the GenAI client
-genai.configure(api_key="AIzaSyCNgFEyq3K1pLud_3M5EUNYtIut2YKSNBw")
+genai.configure(api_key="your api here")
 
 # ✅ Function to generate a resume using Gemini API
 def generate_resume(name, job_title, email, phone, linkedin, university, grad_year):
